@@ -1,15 +1,23 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os  # Βιβλιοθήκη της Python για να διαβάζει το σύστημα
 import mysql.connector
+from flask import Flask, render_template, request, redirect, url_for
+from dotenv import load_dotenv  # Φέρνουμε τη βιβλιοθήκη που εγκαταστήσαμε
+
+# Φορτώνει τις μεταβλητές από το αρχείο .env στη μνήμη
+load_dotenv()
 
 app = Flask(__name__)
 
+
 def get_db_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",  # Βάλε 8080 αν άλλαξες θύρα ή τον κωδικό σου αν έχεις
-        database="job_tracker_db"
+    # Αντί για κείμενο, χρησιμοποιούμε το os.getenv()
+    connection = mysql.connector.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
     )
+    return connection
 
 # 1. READ: Εμφάνιση όλων των αιτήσεων
 @app.route('/')
