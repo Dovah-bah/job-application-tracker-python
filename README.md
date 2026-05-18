@@ -21,3 +21,16 @@ A Full-Stack web application designed to help job seekers organize, track, and m
 2. **Clone the repository:**
    ```bash
    git clone [https://github.com/Dovah-bah/job-application-tracker-python.git](https://github.com/Dovah-bah/job-application-tracker-python.git)
+
+### 🔑 Environment Variables Setup
+
+This project uses `python-dotenv` to manage database credentials securely. Before running the application, you need to set up your local environment file:
+
+1. Create a file named `.env` in the root directory of the project.
+2. Add your MySQL database configuration variables as follows:
+
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password_here
+DB_NAME=job_tracker_db
