@@ -3,6 +3,7 @@ import mysql.connector
 from flask import Flask, render_template, request, redirect, url_for
 from dotenv import load_dotenv  # Φέρνουμε τη βιβλιοθήκη που εγκαταστήσαμε
 
+
 # Φορτώνει τις μεταβλητές από το αρχείο .env στη μνήμη
 load_dotenv()
 
@@ -10,14 +11,41 @@ app = Flask(__name__)
 
 
 def get_db_connection():
-    # Αντί για κείμενο, χρησιμοποιούμε το os.getenv()
-    connection = mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-    )
+    # Κοιτάζει αν τρέχουμε στο Render (ψάχνει το DB_HOST του Render)
+    # Αν δεν το βρει, σημαίνει ότι είμαστε στο PC σου
+    if os.getenv("RENDER") or os.getenv("DB_HOST"):
+        # Κώδικας για το Live Render
+        connection = mysql.connector.connect(
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            port=int(os.getenv("DB_PORT", 3306))
+        )
     return connection
+
+# --- ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΑΥΤΟΜΑΤΟ ΣΤΗΣΙΜΟ ΤΩΝ ΠΙΝΑΚΩΝ ---
+def init_db():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Αν υπάρχει το αρχείο schema.sql, τρέξε το για να φτιαχτεί ο πίνακας applications
+        if os.path.exists('schema.sql'):
+            with open('schema.sql', 'r', encoding='utf-8') as f:
+                # Χωρίζουμε τις εντολές SQL με βάση το ερωτηματικό ;
+                sql_commands = f.read().split(';')
+                
+            for command in sql_commands:
+                if command.strip():
+                    cursor.execute(command)
+            conn.commit()
+            print("🎉 Η βάση δεδομένων ενημερώθηκε επιτυχώς!")
+        
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"❌ Σφάλμα κατά την προετοιμασία της βάσης: {e}")
 
 # 1. READ: Εμφάνιση όλων των αιτήσεων
 @app.route('/')
@@ -72,4 +100,9 @@ def update_status(id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
+    # Καλούμε το init_db() ΕΔΩ, ώστε να φτιαχτεί ο πίνακας ΠΡΙΝ ξεκινήσει ο server
+    print("⏳ Γίνεται έλεγχος και προετοιμασία της βάσης δεδομένων στο Aiven...")
+    init_db()
+    
+    # Μετά ξεκινάει το Flask app
     app.run(debug=True)
